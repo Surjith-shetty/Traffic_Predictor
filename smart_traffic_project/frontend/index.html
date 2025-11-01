@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚦 Smart Traffic Flow Predictor</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    <script src="https://unpkg.com/leaflet-control-geocoder@2.4.0/dist/Control.Geocoder.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder@2.4.0/dist/Control.Geocoder.css" />
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1><i class="fas fa-traffic-light"></i> Smart Traffic Flow Predictor</h1>
+            <p>AI-Powered Route Optimization & Traffic Prediction System</p>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="nav-tabs">
+            <button class="tab-btn active" data-tab="prediction">🔮 Live Prediction</button>
+            <button class="tab-btn" data-tab="analysis">📊 Model Analysis</button>
+            <button class="tab-btn" data-tab="routes">🗺️ Route Comparison</button>
+        </nav>
+
+        <!-- Live Prediction Tab -->
+        <div id="prediction" class="tab-content active">
+            <div class="grid">
+                <div class="card">
+                    <h3><i class="fas fa-sliders-h"></i> Input Parameters</h3>
+                    
+                    <div class="form-group">
+                        <label>From (Source)</label>
+                        <div class="search-container">
+                            <input type="text" id="pred-origin" placeholder="Search for starting location..." autocomplete="off">
+                            <div id="pred-origin-suggestions" class="suggestions"></div>
+                        </div>
+                        <button class="btn-secondary" onclick="useCurrentLocation('pred-origin')">
+                            <i class="fas fa-location-arrow"></i> Use Current
+                        </button>
+                    </div>
+
+                    <div class="form-group">
+                        <label>To (Destination)</label>
+                        <div class="search-container">
+                            <input type="text" id="pred-destination" placeholder="Search for destination..." autocomplete="off">
+                            <div id="pred-destination-suggestions" class="suggestions"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Hour of Day</label>
+                        <input type="range" id="hour" min="0" max="23" value="8">
+                        <span id="hour-value">8:00</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Day of Week</label>
+                        <select id="dayOfWeek">
+                            <option value="0">Monday</option>
+                            <option value="1" selected>Tuesday</option>
+                            <option value="2">Wednesday</option>
+                            <option value="3">Thursday</option>
+                            <option value="4">Friday</option>
+                            <option value="5">Saturday</option>
+                            <option value="6">Sunday</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Rain Intensity</label>
+                        <input type="range" id="rain" min="0" max="1" step="0.1" value="0">
+                        <span id="rain-value">0.0</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Temperature (°C)</label>
+                        <input type="range" id="temperature" min="10" max="40" value="25">
+                        <span id="temp-value">25°C</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Average Speed (km/h)</label>
+                        <input type="range" id="speed" min="10" max="60" value="35">
+                        <span id="speed-value">35 km/h</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="event"> Special Event
+                        </label>
+                    </div>
+
+                    <button class="btn-primary" onclick="predictTraffic()">
+                        <i class="fas fa-chart-line"></i> Predict Traffic
+                    </button>
+                </div>
+
+                <div class="card">
+                    <h3><i class="fas fa-chart-bar"></i> Prediction Results</h3>
+                    
+                    <div class="result-box" id="results" style="display: none;">
+                        <div class="metric">
+                            <div class="metric-value" id="traffic-value">-</div>
+                            <div class="metric-label">Vehicles/Hour</div>
+                        </div>
+                        
+                        <div class="metric">
+                            <div class="metric-value" id="score-value">-</div>
+                            <div class="metric-label">Route Score</div>
+                        </div>
+                        
+                        <div class="traffic-level" id="traffic-level"></div>
+                        
+                        <div class="recommendations" id="recommendations"></div>
+                    </div>
+
+                    <div class="loading" id="loading" style="display: none;">
+                        <i class="fas fa-spinner fa-spin"></i> Analyzing...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Model Analysis Tab -->
+        <div id="analysis" class="tab-content">
+            <div class="card">
+                <h3><i class="fas fa-trophy"></i> Model Performance</h3>
+                <div id="model-table"></div>
+                <canvas id="performance-chart" width="400" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Route Comparison Tab -->
+        <div id="routes" class="tab-content">
+            <div class="grid">
+                <div class="card">
+                    <h3><i class="fas fa-map-marker-alt"></i> Route Planning</h3>
+                    
+                    <div class="form-group">
+                        <label>From (Source)</label>
+                        <div class="search-container">
+                            <input type="text" id="origin" placeholder="Search for starting location..." autocomplete="off">
+                            <div id="origin-suggestions" class="suggestions"></div>
+                        </div>
+                        <button class="btn-secondary" onclick="useCurrentLocation('origin')">
+                            <i class="fas fa-location-arrow"></i> Use Current
+                        </button>
+                    </div>
+
+                    <div class="form-group">
+                        <label>To (Destination)</label>
+                        <div class="search-container">
+                            <input type="text" id="destination" placeholder="Search for destination..." autocomplete="off">
+                            <div id="destination-suggestions" class="suggestions"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Departure Time</label>
+                        <input type="range" id="route-hour" min="0" max="23" value="8">
+                        <span id="route-hour-value">8:00</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Weather Conditions</label>
+                        <input type="range" id="route-rain" min="0" max="1" step="0.1" value="0">
+                        <span id="route-rain-value">No Rain</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="route-event"> Special Event/Holiday
+                        </label>
+                    </div>
+
+                    <button class="btn-primary" onclick="findBestRoute()">
+                        <i class="fas fa-route"></i> Find Best Route
+                    </button>
+                </div>
+
+                <div class="card">
+                    <h3><i class="fas fa-map"></i> Live Navigation</h3>
+                    <div class="map-controls">
+                        <button class="btn-secondary" onclick="toggleTrafficLayer()">
+                            <i class="fas fa-road"></i> Traffic Layer
+                        </button>
+                        <button class="btn-secondary" onclick="recenterMap()">
+                            <i class="fas fa-crosshairs"></i> Recenter
+                        </button>
+                        <button class="btn-secondary" onclick="startNavigation()">
+                            <i class="fas fa-navigation"></i> Start Navigation
+                        </button>
+                    </div>
+                    <div id="map" style="height: 500px; border-radius: 10px; margin-top: 10px;"></div>
+                    <div id="navigation-panel" style="display: none;">
+                        <h4><i class="fas fa-route"></i> Turn-by-Turn Directions</h4>
+                        <div id="directions-list"></div>
+                        <div class="navigation-controls">
+                            <button class="btn-primary" onclick="nextStep()">
+                                <i class="fas fa-arrow-right"></i> Next
+                            </button>
+                            <button class="btn-secondary" onclick="stopNavigation()">
+                                <i class="fas fa-stop"></i> Stop
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card" style="margin-top: 20px;">
+                <h3><i class="fas fa-list"></i> Smart Route Analysis</h3>
+                <div class="route-stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="total-routes">0</div>
+                        <div class="stat-label">Routes Found</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="best-score">-</div>
+                        <div class="stat-label">Best Score</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="time-saved">-</div>
+                        <div class="stat-label">Time Saved</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="traffic-level">-</div>
+                        <div class="stat-label">Traffic Level</div>
+                    </div>
+                </div>
+                <div id="route-results"></div>
+                <div id="live-updates" style="margin-top: 15px;">
+                    <h4><i class="fas fa-broadcast-tower"></i> Live Traffic Updates</h4>
+                    <div id="traffic-alerts"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
