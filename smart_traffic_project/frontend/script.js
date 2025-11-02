@@ -195,12 +195,31 @@ async function predictTraffic() {
     const loading = document.getElementById('loading');
     const results = document.getElementById('results');
     
+    // Validate inputs
+    const origin = document.getElementById('pred-origin').value.trim();
+    const destination = document.getElementById('pred-destination').value.trim();
+    
+    // Clear any existing validation message
+    const existingMessage = document.querySelector('.validation-message');
+    if (existingMessage) {
+        existingMessage.remove();
+    }
+    
+    if (!origin || !destination) {
+        const validationMessage = document.createElement('div');
+        validationMessage.className = 'validation-message';
+        validationMessage.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Please enter both source and destination locations to get traffic predictions';
+        
+        const resultsCard = document.querySelector('#results').parentElement;
+        resultsCard.insertBefore(validationMessage, resultsCard.firstChild.nextSibling);
+        
+        return;
+    }
+    
     loading.style.display = 'block';
     results.style.display = 'none';
 
     try {
-        const origin = document.getElementById('pred-origin').value;
-        const destination = document.getElementById('pred-destination').value;
         const hour = parseInt(document.getElementById('hour').value);
         const dayOfWeek = parseInt(document.getElementById('dayOfWeek').value);
         const isWeekend = dayOfWeek >= 5 ? 1 : 0;
