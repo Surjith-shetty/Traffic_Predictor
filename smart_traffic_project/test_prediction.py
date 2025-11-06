@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import sys
 import os
-sys.path.append('/Users/surjithsshetty/Desktop/smart_traffic_project')
+sys.path.append('/Users/surjithsshetty/Desktop/aiml_CIE3/smart_traffic_project')
 
 from ml_models import TrafficPredictor
 
@@ -13,7 +13,7 @@ def test_prediction():
         if not predictor.load_models():
             print("Training models...")
             predictor.load_data('traffic_data.csv')
-            predictor.train_all_models()
+            predictor.train_models()
             predictor.save_models()
         
         predicted_traffic = predictor.predict_traffic(
@@ -37,5 +37,5 @@ def test_prediction():
         return False
 
 if __name__ == "__main__":
-    os.chdir('/Users/surjithsshetty/Desktop/smart_traffic_project')
+    os.chdir('/Users/surjithsshetty/Desktop/aiml_CIE3/smart_traffic_project')
     test_prediction()

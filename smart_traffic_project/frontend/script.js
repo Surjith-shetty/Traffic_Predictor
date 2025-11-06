@@ -9,6 +9,8 @@ let userLocation = null;
 let watchId = null;
 let userMarker = null;
 let routeMarkers = [];
+let currentWeather = null;
+let weatherUpdateInterval = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     initializeTabs();
@@ -16,6 +18,8 @@ document.addEventListener('DOMContentLoaded', function() {
     loadModelAnalysis();
     startLocationTracking();
     setupAddressSearch();
+    loadWeatherData();
+    setInterval(loadWeatherData, 300000);
 });
 
 function startLocationTracking() {
@@ -145,19 +149,13 @@ function initializeSliders() {
     const hourValue = document.getElementById('hour-value');
     hourSlider.addEventListener('input', () => {
         hourValue.textContent = hourSlider.value + ':00';
+        updateWeatherForSelectedDay();
     });
+    
+    const daySelect = document.getElementById('dayOfWeek');
+    daySelect.addEventListener('change', updateWeatherForSelectedDay);
 
-    const rainSlider = document.getElementById('rain');
-    const rainValue = document.getElementById('rain-value');
-    rainSlider.addEventListener('input', () => {
-        rainValue.textContent = parseFloat(rainSlider.value).toFixed(1);
-    });
 
-    const tempSlider = document.getElementById('temperature');
-    const tempValue = document.getElementById('temp-value');
-    tempSlider.addEventListener('input', () => {
-        tempValue.textContent = tempSlider.value + '°C';
-    });
 
     const speedSlider = document.getElementById('speed');
     const speedValue = document.getElementById('speed-value');
@@ -171,16 +169,58 @@ function initializeSliders() {
         routeHourValue.textContent = routeHourSlider.value + ':00';
     });
 
-    const routeRainSlider = document.getElementById('route-rain');
-    const routeRainValue = document.getElementById('route-rain-value');
-    routeRainSlider.addEventListener('input', () => {
-        const value = parseFloat(routeRainSlider.value);
-        if (value === 0) routeRainValue.textContent = 'No Rain';
-        else if (value <= 0.3) routeRainValue.textContent = 'Light Rain';
-        else if (value <= 0.7) routeRainValue.textContent = 'Moderate Rain';
-        else routeRainValue.textContent = 'Heavy Rain';
-    });
+
 }
+
+async function loadWeatherData() {
+    try {
+        const response = await fetch(API_BASE + '/weather');
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        if (data.success) {
+            const weather = data.weather || data.data;
+            updateWeatherDisplay(weather);
+        }
+    } catch (error) {
+        console.log('Weather data will load when backend is ready');
+    }
+}
+
+function updateWeatherDisplay(weather) {
+    const weatherHtml = `
+        <strong>${weather.weather_description}</strong> - ${weather.temperature}°C<br>
+        <small>Humidity: ${weather.humidity}% | Rain: ${weather.rain_intensity} | ${weather.city}</small>
+    `;
+    
+    const weatherDisplay = document.getElementById('weather-display');
+    const routeWeatherDisplay = document.getElementById('route-weather-display');
+    
+    if (weatherDisplay) {
+        weatherDisplay.innerHTML = weatherHtml;
+    }
+    if (routeWeatherDisplay) {
+        routeWeatherDisplay.innerHTML = weatherHtml;
+    }
+}
+
+function updateWeatherForSelectedDay() {
+    const dayOfWeek = parseInt(document.getElementById('dayOfWeek').value);
+    const hour = parseInt(document.getElementById('hour').value);
+    
+    // Simulate weather prediction for selected day
+    const weather = {
+        temperature: 25 + (dayOfWeek * 2) + (hour / 24 * 5),
+        humidity: 60 + (dayOfWeek * 3),
+        rain_intensity: dayOfWeek >= 5 ? 0.2 : 0.1,
+        weather_description: dayOfWeek >= 5 ? 'Partly cloudy' : 'Clear sky',
+        city: 'Predicted for selected day'
+    };
+    
+    updateWeatherDisplay(weather);
+}
+
+
 
 async function predictTraffic() {
     const loading = document.getElementById('loading');
@@ -212,8 +252,6 @@ async function predictTraffic() {
         const hour = parseInt(document.getElementById('hour').value);
         const dayOfWeek = parseInt(document.getElementById('dayOfWeek').value);
         const isWeekend = dayOfWeek >= 5 ? 1 : 0;
-        const rainIntensity = parseFloat(document.getElementById('rain').value);
-        const temperature = parseInt(document.getElementById('temperature').value);
         const avgSpeed = parseInt(document.getElementById('speed').value);
         const eventFlag = document.getElementById('event').checked ? 1 : 0;
         const rushHour = (hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19) ? 1 : 0;
@@ -223,7 +261,6 @@ async function predictTraffic() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 origin, destination, hour, day_of_week: dayOfWeek, is_weekend: isWeekend,
-                rain_intensity: rainIntensity, temperature, humidity: 60,
                 event_flag: eventFlag, rush_hour: rushHour, avg_speed: avgSpeed
             })
         });
@@ -255,8 +292,8 @@ function displayResults(data, origin, destination) {
     trafficLevel.style.backgroundColor = level.color;
 
     const recommendations = document.getElementById('recommendations');
-    recommendations.innerHTML = '<h4> Route: ' + origin + ' ' + destination + '</h4>' +
-        '<h4> Recommendations:</h4><ul>' + 
+    recommendations.innerHTML = '<h4>🚗 Route: ' + origin + ' → ' + destination + '</h4>' +
+        '<h4>💡 Recommendations:</h4><ul>' + 
         data.recommendations.map(rec => '<li>' + rec + '</li>').join('') + '</ul>';
 
     document.getElementById('results').style.display = 'block';
@@ -479,7 +516,7 @@ function processFoundRoutes(routes, origin, destination) {
             steps: route.instructions.map(inst => inst.text),
             coordinates: route.coordinates,
             traffic_level: index === 0 ? 'Light' : index === 1 ? 'Moderate' : 'Heavy',
-            score: 95 - (index * 8) + Math.random() * 10,
+            score: Math.min(100, 95 - (index * 8) + Math.random() * 10),
             routeIndex: index,
             route: route
         };

@@ -2,9 +2,19 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import random
 import math
+from weather_api import WeatherAPI
 
 app = Flask(__name__)
 CORS(app)
+weather_api = WeatherAPI()
+
+@app.route('/api/weather', methods=['GET'])
+def get_weather():
+    try:
+        weather_data = weather_api.get_weather_data()
+        return jsonify({'success': True, 'weather': weather_data})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/predict', methods=['POST'])
 def predict_traffic():
@@ -13,17 +23,24 @@ def predict_traffic():
         origin = data.get('origin', 'Start')
         destination = data.get('destination', 'End')
         hour = data.get('hour', 8)
-        rain = data.get('rain_intensity', 0)
+        # Get predicted weather for selected day and hour
+        day_of_week = data.get('day_of_week', 1)
+        weather_data = weather_api.predict_weather_for_day(day_of_week, hour)
+        rain = weather_data['rain_intensity']
+        temperature = weather_data['temperature']
+        
         speed = data.get('avg_speed', 35)
         event = data.get('event_flag', 0)
         rush_hour = data.get('rush_hour', 0)
         
-        # Simple traffic calculation
+        # Weather-enhanced traffic calculation
         base_traffic = 200
         if rush_hour:
             base_traffic *= 2.5
         if rain > 0.3:
             base_traffic *= 1.5
+        if temperature > 35:
+            base_traffic *= 1.2
         if event:
             base_traffic *= 1.3
             
@@ -31,11 +48,11 @@ def predict_traffic():
         score = max(0, min(100, 100 - (traffic / 10) + (speed / 2)))
         
         if traffic < 200:
-            level = {"level": "Light", "color": "#4CAF50", "icon": ""}
+            level = {"level": "Light", "color": "#4CAF50", "icon": "🟢"}
         elif traffic < 400:
-            level = {"level": "Moderate", "color": "#FF9800", "icon": ""}
+            level = {"level": "Moderate", "color": "#FF9800", "icon": "🟡"}
         else:
-            level = {"level": "Heavy", "color": "#F44336", "icon": ""}
+            level = {"level": "Heavy", "color": "#F44336", "icon": "🔴"}
             
         recs = [f"Good conditions for {origin} to {destination}"]
         if score < 50:
@@ -69,17 +86,25 @@ def get_routes():
         origin = data.get('origin', 'Start')
         destination = data.get('destination', 'End')
         
+        # Get weather data for route calculation
+        weather_data = weather_api.get_weather_data()
+        rain_impact = 1 + (weather_data['rain_intensity'] * 0.3)
+        
         routes = [
             {
                 'name': f'Route 1 (Main Road) - {origin} to {destination}',
-                'distance': '12.5 km', 'duration': '18 mins',
-                'traffic': 350, 'score': 75,
+                'distance': '12.5 km', 
+                'duration': f"{int(18 * rain_impact)} mins",
+                'traffic': int(350 * rain_impact), 
+                'score': max(30, 75 - (weather_data['rain_intensity'] * 20)),
                 'steps': ['Head north', 'Turn right on Main St', 'Continue straight', 'Arrive at destination']
             },
             {
                 'name': f'Route 2 (Highway) - {origin} to {destination}',
-                'distance': '15.2 km', 'duration': '16 mins',
-                'traffic': 280, 'score': 85,
+                'distance': '15.2 km', 
+                'duration': f"{int(16 * rain_impact)} mins",
+                'traffic': int(280 * rain_impact), 
+                'score': max(40, 85 - (weather_data['rain_intensity'] * 15)),
                 'steps': ['Head east', 'Merge onto highway', 'Continue for 12 km', 'Exit and arrive']
             }
         ]

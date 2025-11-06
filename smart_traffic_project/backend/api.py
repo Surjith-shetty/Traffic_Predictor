@@ -20,11 +20,11 @@ maps_service = MapsService()
 
 # Load models on startup
 try:
-    os.chdir('/Users/surjithsshetty/Desktop/smart_traffic_project')
+    os.chdir('/Users/surjithsshetty/Desktop/aiml_CIE3/smart_traffic_project')
     if not predictor.load_models():
         print("Training models...")
         predictor.load_data('traffic_data.csv')
-        predictor.train_all_models()
+        predictor.train_models()
         predictor.save_models()
     print("Models loaded successfully!")
 except Exception as e:
@@ -74,7 +74,7 @@ def get_weather():
 def get_model_performance():
     try:
         predictor.load_data('traffic_data.csv')
-        results = predictor.train_all_models()
+        results = predictor.train_models()
         
         model_data = []
         for name, metrics in results.items():

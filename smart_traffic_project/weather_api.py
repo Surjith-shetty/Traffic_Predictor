@@ -58,26 +58,31 @@ class WeatherAPI:
             print(f"Error parsing weather data: {e}")
             return self._get_mock_weather_data()
     
-    def _get_mock_weather_data(self):
-        """Return mock weather data for demo"""
+    def predict_weather_for_day(self, day_of_week, hour):
+        """Predict weather based on day and hour"""
         import random
         
-        # Generate realistic weather data
-        current_hour = datetime.now().hour
-        
-        # Temperature varies by time of day
-        if 6 <= current_hour <= 10:
+        # Day-based weather patterns
+        if day_of_week in [5, 6]:  # Weekend
+            temp_modifier = random.uniform(-2, 2)
+            rain_chance = 0.3
+        else:  # Weekday
+            temp_modifier = random.uniform(-1, 1)
+            rain_chance = 0.2
+            
+        # Hour-based temperature
+        if 6 <= hour <= 10:
             temp_base = 22
-        elif 11 <= current_hour <= 15:
+        elif 11 <= hour <= 15:
             temp_base = 28
-        elif 16 <= current_hour <= 19:
+        elif 16 <= hour <= 19:
             temp_base = 26
         else:
             temp_base = 20
             
-        temperature = temp_base + random.uniform(-3, 3)
-        humidity = random.uniform(40, 85)
-        rain_intensity = random.choice([0.0, 0.0, 0.0, 0.1, 0.3, 0.6])  # Mostly no rain
+        temperature = temp_base + temp_modifier
+        humidity = random.uniform(45, 80)
+        rain_intensity = random.choice([0.0, 0.1, 0.3]) if random.random() < rain_chance else 0.0
         
         descriptions = [
             "Clear sky", "Few clouds", "Scattered clouds", 
@@ -89,8 +94,12 @@ class WeatherAPI:
             'humidity': round(humidity, 1),
             'rain_intensity': rain_intensity,
             'weather_description': random.choice(descriptions),
-            'city': 'Demo City'
+            'city': 'AI Predicted Weather'
         }
+    
+    def _get_mock_weather_data(self):
+        """Return mock weather data for demo"""
+        return self.predict_weather_for_day(datetime.now().weekday(), datetime.now().hour)
 
 # Example usage
 if __name__ == "__main__":

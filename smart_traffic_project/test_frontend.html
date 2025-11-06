@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Integration Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; }
+        .weather-display { background: rgba(23, 162, 184, 0.1); border-radius: 8px; padding: 12px; border-left: 3px solid #17a2b8; margin: 10px 0; }
+        .weather-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+        .weather-item { display: flex; align-items: center; gap: 8px; padding: 8px; background: rgba(255, 255, 255, 0.7); border-radius: 6px; }
+        .btn { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+        .btn:hover { background: #0056b3; }
+        .result { background: #d4edda; padding: 15px; border-radius: 5px; margin: 10px 0; border-left: 4px solid #28a745; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌤️ Weather Integration Test</h1>
+        <p>This page tests the automatic weather fetching functionality.</p>
+        
+        <button class="btn" onclick="testWeather()">🔄 Fetch Current Weather</button>
+        
+        <div id="weather-result"></div>
+        
+        <h3>🚦 Traffic Prediction Test</h3>
+        <input type="text" id="origin" placeholder="From (e.g., Bangalore)" style="width: 200px; padding: 8px; margin: 5px;">
+        <input type="text" id="destination" placeholder="To (e.g., Mysore)" style="width: 200px; padding: 8px; margin: 5px;">
+        <button class="btn" onclick="testPrediction()">🎯 Predict with Weather</button>
+        
+        <div id="prediction-result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5001/api';
+
+        async function testWeather() {
+            const resultDiv = document.getElementById('weather-result');
+            resultDiv.innerHTML = '<p>🔄 Fetching weather data...</p>';
+            
+            try {
+                const response = await fetch(API_BASE + '/weather');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const weather = data.weather;
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h4>✅ Weather Data Retrieved</h4>
+                            <div class="weather-display">
+                                <div class="weather-details">
+                                    <div class="weather-item">🌡️ ${weather.temperature}°C</div>
+                                    <div class="weather-item">💧 ${weather.humidity}%</div>
+                                    <div class="weather-item">🌧️ ${weather.weather_description}</div>
+                                    <div class="weather-item">📍 ${weather.city}</div>
+                                    <div class="weather-item">☔ Rain: ${weather.rain_intensity}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = '<div class="result" style="background: #f8d7da; border-left-color: #dc3545;">❌ Error: ' + data.error + '</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<div class="result" style="background: #f8d7da; border-left-color: #dc3545;">❌ Connection Error: Make sure backend is running on port 5001</div>';
+            }
+        }
+
+        async function testPrediction() {
+            const origin = document.getElementById('origin').value || 'Bangalore';
+            const destination = document.getElementById('destination').value || 'Mysore';
+            const resultDiv = document.getElementById('prediction-result');
+            
+            resultDiv.innerHTML = '<p>🔄 Predicting traffic with weather data...</p>';
+            
+            try {
+                const response = await fetch(API_BASE + '/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        origin: origin,
+                        destination: destination,
+                        hour: new Date().getHours(),
+                        day_of_week: new Date().getDay(),
+                        is_weekend: new Date().getDay() >= 5 ? 1 : 0,
+                        event_flag: 0,
+                        rush_hour: (new Date().getHours() >= 7 && new Date().getHours() <= 9) || (new Date().getHours() >= 17 && new Date().getHours() <= 19) ? 1 : 0,
+                        avg_speed: 35
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h4>🎯 Traffic Prediction with Weather</h4>
+                            <p><strong>Route:</strong> ${data.route_info}</p>
+                            <p><strong>Predicted Traffic:</strong> ${data.predicted_traffic} vehicles/hour</p>
+                            <p><strong>Route Score:</strong> ${data.route_score}/100</p>
+                            <p><strong>Traffic Level:</strong> ${data.traffic_level.icon} ${data.traffic_level.level}</p>
+                            
+                            ${data.weather ? `
+                                <div class="weather-display">
+                                    <h5>🌤️ Weather Impact</h5>
+                                    <p>${data.weather.weather_description} - ${data.weather.temperature}°C</p>
+                                    <p>Rain: ${data.weather.rain_intensity} | Humidity: ${data.weather.humidity}%</p>
+                                </div>
+                            ` : ''}
+                            
+                            <h5>💡 Recommendations:</h5>
+                            <ul>
+                                ${data.recommendations.map(rec => '<li>' + rec + '</li>').join('')}
+                            </ul>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = '<div class="result" style="background: #f8d7da; border-left-color: #dc3545;">❌ Error: ' + data.error + '</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<div class="result" style="background: #f8d7da; border-left-color: #dc3545;">❌ Connection Error: Make sure backend is running on port 5001</div>';
+            }
+        }
+
+        // Auto-test weather on page load
+        window.onload = function() {
+            setTimeout(testWeather, 1000);
+        };
+    </script>
+</body>
+</html>

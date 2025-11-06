@@ -3,20 +3,14 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import PolynomialFeatures
-from sklearn.neighbors import KNeighborsRegressor
-from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import joblib
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 class TrafficPredictor:
     def __init__(self):
         self.models = {}
         self.scaler = StandardScaler()
-        self.poly_features = PolynomialFeatures(degree=2, include_bias=False)
         self.feature_names = []
         self.results = {}
         
@@ -45,8 +39,8 @@ class TrafficPredictor:
         
         return X_train, X_test, y_train, y_test, X_train_scaled, X_test_scaled
     
-    def train_all_models(self):
-        """Train all 5 models and compare performance"""
+    def train_models(self):
+        """Train Linear Regression and Random Forest models"""
         X_train, X_test, y_train, y_test, X_train_scaled, X_test_scaled = self.prepare_features()
         
         print("Training Linear Regression...")
@@ -54,26 +48,6 @@ class TrafficPredictor:
         lr.fit(X_train_scaled, y_train)
         lr_pred = lr.predict(X_test_scaled)
         self.models['Linear Regression'] = lr
-        
-        print("Training Polynomial Regression...")
-        X_train_poly = self.poly_features.fit_transform(X_train_scaled)
-        X_test_poly = self.poly_features.transform(X_test_scaled)
-        poly_lr = LinearRegression()
-        poly_lr.fit(X_train_poly, y_train)
-        poly_pred = poly_lr.predict(X_test_poly)
-        self.models['Polynomial Regression'] = poly_lr
-        
-        print("Training KNN Regressor...")
-        knn = KNeighborsRegressor(n_neighbors=5)
-        knn.fit(X_train_scaled, y_train)
-        knn_pred = knn.predict(X_test_scaled)
-        self.models['KNN Regressor'] = knn
-        
-        print("Training Decision Tree...")
-        dt = DecisionTreeRegressor(random_state=42, max_depth=10)
-        dt.fit(X_train, y_train)
-        dt_pred = dt.predict(X_test)
-        self.models['Decision Tree'] = dt
         
         print("Training Random Forest...")
         rf = RandomForestRegressor(n_estimators=100, random_state=42, max_depth=15)
@@ -83,9 +57,6 @@ class TrafficPredictor:
         
         predictions = {
             'Linear Regression': lr_pred,
-            'Polynomial Regression': poly_pred,
-            'KNN Regressor': knn_pred,
-            'Decision Tree': dt_pred,
             'Random Forest': rf_pred
         }
         
@@ -121,13 +92,32 @@ class TrafficPredictor:
     
     def predict_traffic(self, hour, day_of_week, is_weekend, rain_intensity, 
                        temperature, humidity, event_flag, rush_hour, avg_speed):
-        """Predict traffic using the best model (Random Forest)"""
+        """Predict traffic using Random Forest (primary predictor)"""
         features = np.array([[hour, day_of_week, is_weekend, rain_intensity,
                             temperature, humidity, event_flag, rush_hour, avg_speed]])
         
+        # Use Random Forest as primary predictor
         rf_model = self.models['Random Forest']
         prediction = rf_model.predict(features)[0]
         return max(0, prediction)
+    
+    def compare_predictions(self, hour, day_of_week, is_weekend, rain_intensity, 
+                          temperature, humidity, event_flag, rush_hour, avg_speed):
+        """Compare predictions from both Linear Regression and Random Forest"""
+        features = np.array([[hour, day_of_week, is_weekend, rain_intensity,
+                            temperature, humidity, event_flag, rush_hour, avg_speed]])
+        
+        # Linear Regression prediction (scaled features)
+        features_scaled = self.scaler.transform(features)
+        lr_prediction = self.models['Linear Regression'].predict(features_scaled)[0]
+        
+        # Random Forest prediction (original features)
+        rf_prediction = self.models['Random Forest'].predict(features)[0]
+        
+        return {
+            'Linear Regression': max(0, lr_prediction),
+            'Random Forest': max(0, rf_prediction)
+        }
     
     def calculate_route_score(self, predicted_traffic, avg_speed, rain_intensity, event_impact):
         """Calculate route score using the weighted formula"""
@@ -147,7 +137,6 @@ class TrafficPredictor:
         """Save trained models"""
         joblib.dump(self.models, 'trained_models.pkl')
         joblib.dump(self.scaler, 'scaler.pkl')
-        joblib.dump(self.poly_features, 'poly_features.pkl')
         print("Models saved successfully!")
     
     def load_models(self):
@@ -155,7 +144,6 @@ class TrafficPredictor:
         try:
             self.models = joblib.load('trained_models.pkl')
             self.scaler = joblib.load('scaler.pkl')
-            self.poly_features = joblib.load('poly_features.pkl')
             print("Models loaded successfully!")
             return True
         except:
@@ -167,11 +155,11 @@ def main():
     
     predictor.load_data('traffic_data.csv')
     
-    results = predictor.train_all_models()
+    results = predictor.train_models()
     
-    print("\n" + "="*60)
-    print("MODEL COMPARISON RESULTS")
-    print("="*60)
+    print("\n" + "="*50)
+    print("MODEL PERFORMANCE COMPARISON")
+    print("="*50)
     
     for model_name, metrics in results.items():
         print(f"\n{model_name}:")
@@ -180,17 +168,17 @@ def main():
         print(f"  R²:   {metrics['R2']:.4f}")
     
     feature_imp = predictor.get_feature_importance()
-    print(f"\n{'='*60}")
+    print(f"\n{'='*50}")
     print("FEATURE IMPORTANCE (Random Forest)")
-    print("="*60)
+    print("="*50)
     for _, row in feature_imp.iterrows():
         print(f"{row['feature']:15}: {row['importance']:.4f}")
     
     predictor.save_models()
     
-    print(f"\n{'='*60}")
-    print("EXAMPLE PREDICTION")
-    print("="*60)
+    print(f"\n{'='*50}")
+    print("EXAMPLE PREDICTION (Random Forest)")
+    print("="*50)
     
     traffic_pred = predictor.predict_traffic(
         hour=8, day_of_week=1, is_weekend=0, rain_intensity=0.5,
@@ -204,6 +192,21 @@ def main():
     
     print(f"Predicted Traffic Flow: {traffic_pred:.0f} vehicles/hour")
     print(f"Route Efficiency Score: {route_score:.1f}/100")
+    
+    print(f"\n{'='*50}")
+    print("MODEL COMPARISON FOR SAME INPUT")
+    print("="*50)
+    
+    comparison = predictor.compare_predictions(
+        hour=8, day_of_week=1, is_weekend=0, rain_intensity=0.5,
+        temperature=22, humidity=80, event_flag=1, rush_hour=1, avg_speed=25
+    )
+    
+    for model, pred in comparison.items():
+        print(f"{model:18}: {pred:.0f} vehicles/hour")
+    
+    print(f"\nPrimary Predictor: Random Forest (Higher Accuracy: R² = {predictor.results['Random Forest']['R2']:.4f})")
+    print(f"Backup Model: Linear Regression (R² = {predictor.results['Linear Regression']['R2']:.4f})")
 
 if __name__ == "__main__":
     main()
