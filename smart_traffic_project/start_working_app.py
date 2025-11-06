@@ -14,37 +14,35 @@ def start_frontend():
     subprocess.run(['python', '-m', 'http.server', '8080'])
 
 def main():
-    print("🚦 Starting Working Traffic Predictor")
+    print("Starting Working Traffic Predictor")
     print("=" * 40)
     
-    # Start backend
     backend_thread = threading.Thread(target=start_backend)
     backend_thread.daemon = True
     backend_thread.start()
     
-    print("🔧 Backend starting...")
+    print("Backend starting...")
     time.sleep(3)
     
-    # Start frontend
     frontend_thread = threading.Thread(target=start_frontend)
     frontend_thread.daemon = True
     frontend_thread.start()
     
-    print("🌐 Frontend starting...")
+    print("Frontend starting...")
     time.sleep(2)
     
-    print("🚀 Opening application...")
+    print("Opening application...")
     webbrowser.open('http://localhost:8080')
     
-    print("\\n✅ Application running:")
-    print("🌐 http://localhost:8080")
+    print("\\nApplication running:")
+    print("http://localhost:8080")
     print("\\nPress Ctrl+C to stop")
     
     try:
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        print("\\n👋 Stopped")
+        print("\\nStopped")
 
 if __name__ == "__main__":
     main()

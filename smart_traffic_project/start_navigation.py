@@ -14,7 +14,7 @@ def start_backend():
     """Start the backend API server"""
     backend_path = Path(__file__).parent / "backend"
     if backend_path.exists():
-        print("🚀 Starting backend server...")
+        print(" Starting backend server...")
         return subprocess.Popen([
             sys.executable, "api.py"
         ], cwd=backend_path)
@@ -24,44 +24,41 @@ def start_frontend():
     """Start the frontend server"""
     frontend_path = Path(__file__).parent / "frontend"
     if frontend_path.exists():
-        print("🌐 Starting frontend server...")
+        print(" Starting frontend server...")
         return subprocess.Popen([
             "python", "-m", "http.server", "8080"
         ], cwd=frontend_path)
     return None
 
 def main():
-    print("🚦 Smart Traffic Navigation System")
+    print(" Smart Traffic Navigation System")
     print("=" * 40)
     
-    # Start backend
     backend_process = start_backend()
     time.sleep(2)
     
-    # Start frontend
     frontend_process = start_frontend()
     time.sleep(2)
     
-    # Open browser
-    print("🌍 Opening browser...")
+    print(" Opening browser...")
     webbrowser.open("http://localhost:8080")
     
-    print("\n✅ System ready!")
-    print("📍 Real-time navigation with ML predictions")
-    print("🗺️  Interactive route planning")
-    print("📊 Live traffic analysis")
+    print("\n System ready!")
+    print(" Real-time navigation with ML predictions")
+    print("  Interactive route planning")
+    print(" Live traffic analysis")
     print("\nPress Ctrl+C to stop all servers")
     
     try:
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        print("\n🛑 Shutting down...")
+        print("\n Shutting down...")
         if backend_process:
             backend_process.terminate()
         if frontend_process:
             frontend_process.terminate()
-        print("✅ All servers stopped")
+        print(" All servers stopped")
 
 if __name__ == "__main__":
     main()

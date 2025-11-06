@@ -31,11 +31,11 @@ def predict_traffic():
         score = max(0, min(100, 100 - (traffic / 10) + (speed / 2)))
         
         if traffic < 200:
-            level = {"level": "Light", "color": "#4CAF50", "icon": "🟢"}
+            level = {"level": "Light", "color": "#4CAF50", "icon": ""}
         elif traffic < 400:
-            level = {"level": "Moderate", "color": "#FF9800", "icon": "🟡"}
+            level = {"level": "Moderate", "color": "#FF9800", "icon": ""}
         else:
-            level = {"level": "Heavy", "color": "#F44336", "icon": "🔴"}
+            level = {"level": "Heavy", "color": "#F44336", "icon": ""}
             
         recs = [f"Good conditions for {origin} to {destination}"]
         if score < 50:
@@ -90,5 +90,5 @@ def get_routes():
         return jsonify({'success': False, 'error': str(e)})
 
 if __name__ == '__main__':
-    print("🚦 Simple Backend Starting...")
+    print("Simple Backend Starting...")
     app.run(debug=True, port=5001, host='0.0.0.0')

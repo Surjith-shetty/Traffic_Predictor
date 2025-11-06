@@ -12,9 +12,9 @@ def install_requirements():
     """Install required packages"""
     try:
         subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
-        print("✅ All requirements installed successfully!")
+        print("All requirements installed successfully!")
     except subprocess.CalledProcessError:
-        print("❌ Error installing requirements. Please install manually:")
+        print("Error installing requirements. Please install manually:")
         print("pip install -r requirements.txt")
         return False
     return True
@@ -22,32 +22,29 @@ def install_requirements():
 def run_streamlit_app():
     """Launch the Streamlit application"""
     try:
-        print("🚀 Starting Smart Traffic Flow Predictor...")
-        print("📱 The app will open in your browser automatically")
-        print("🔗 If it doesn't open, go to: http://localhost:8501")
+        print("Starting Smart Traffic Flow Predictor...")
+        print("The app will open in your browser automatically")
+        print("If it doesn't open, go to: http://localhost:8501")
         print("\n" + "="*50)
         
         subprocess.run([sys.executable, "-m", "streamlit", "run", "app.py"])
     except KeyboardInterrupt:
-        print("\n👋 Application stopped by user")
+        print("\nApplication stopped by user")
     except Exception as e:
-        print(f"❌ Error running application: {e}")
+        print(f"Error running application: {e}")
 
 def main():
-    print("🚦 Smart Local Traffic Flow Predictor")
+    print("Smart Local Traffic Flow Predictor")
     print("=" * 50)
     
-    # Check if we're in the right directory
     if not os.path.exists("app.py"):
-        print("❌ Please run this script from the project directory")
+        print("Please run this script from the project directory")
         return
     
-    # Install requirements if needed
-    print("📦 Checking requirements...")
+    print("Checking requirements...")
     if not install_requirements():
         return
     
-    # Run the app
     run_streamlit_app()
 
 if __name__ == "__main__":

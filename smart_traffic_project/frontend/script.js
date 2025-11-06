@@ -10,7 +10,6 @@ let watchId = null;
 let userMarker = null;
 let routeMarkers = [];
 
-// Initialize everything when page loads
 document.addEventListener('DOMContentLoaded', function() {
     initializeTabs();
     initializeSliders();
@@ -48,11 +47,9 @@ function startLocationTracking() {
 }
 
 function setupAddressSearch() {
-    // Route planning inputs
     const originInput = document.getElementById('origin');
     const destinationInput = document.getElementById('destination');
     
-    // Live prediction inputs
     const predOriginInput = document.getElementById('pred-origin');
     const predDestinationInput = document.getElementById('pred-destination');
     
@@ -61,7 +58,6 @@ function setupAddressSearch() {
     predOriginInput.addEventListener('input', (e) => searchAddress(e.target.value, 'pred-origin'));
     predDestinationInput.addEventListener('input', (e) => searchAddress(e.target.value, 'pred-destination'));
     
-    // Hide suggestions when clicking outside
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.search-container')) {
             document.querySelectorAll('.suggestions').forEach(s => s.style.display = 'none');
@@ -102,7 +98,6 @@ function selectAddress(address, coordinates, inputType) {
     document.getElementById(inputType).value = address;
     document.getElementById(inputType + '-suggestions').style.display = 'none';
     
-    // Store coordinates for routing
     if (inputType === 'origin') {
         window.originCoords = coordinates;
     } else if (inputType === 'destination') {
@@ -113,11 +108,9 @@ function selectAddress(address, coordinates, inputType) {
         window.predDestinationCoords = coordinates;
     }
     
-    // Update map view only for route planning tab
     if (map && (inputType === 'origin' || inputType === 'destination')) {
         map.setView(coordinates, 13);
         
-        // Add marker
         const marker = L.marker(coordinates).addTo(map)
             .bindPopup(inputType === 'origin' ? 'Start Location' : 'Destination')
             .openPopup();
@@ -148,7 +141,6 @@ function initializeTabs() {
 }
 
 function initializeSliders() {
-    // Live prediction sliders
     const hourSlider = document.getElementById('hour');
     const hourValue = document.getElementById('hour-value');
     hourSlider.addEventListener('input', () => {
@@ -173,7 +165,6 @@ function initializeSliders() {
         speedValue.textContent = speedSlider.value + ' km/h';
     });
 
-    // Route planning sliders
     const routeHourSlider = document.getElementById('route-hour');
     const routeHourValue = document.getElementById('route-hour-value');
     routeHourSlider.addEventListener('input', () => {
@@ -195,11 +186,9 @@ async function predictTraffic() {
     const loading = document.getElementById('loading');
     const results = document.getElementById('results');
     
-    // Validate inputs
     const origin = document.getElementById('pred-origin').value.trim();
     const destination = document.getElementById('pred-destination').value.trim();
     
-    // Clear any existing validation message
     const existingMessage = document.querySelector('.validation-message');
     if (existingMessage) {
         existingMessage.remove();
@@ -266,9 +255,9 @@ function displayResults(data, origin, destination) {
     trafficLevel.style.backgroundColor = level.color;
 
     const recommendations = document.getElementById('recommendations');
-    recommendations.innerHTML = '<h4>🗺️ Route: ' + origin + ' → ' + destination + '</h4>' +
-        '<h4>💡 Recommendations:</h4><ul>' + 
-        data.recommendations.map(rec => '<li>• ' + rec + '</li>').join('') + '</ul>';
+    recommendations.innerHTML = '<h4> Route: ' + origin + ' ' + destination + '</h4>' +
+        '<h4> Recommendations:</h4><ul>' + 
+        data.recommendations.map(rec => '<li>' + rec + '</li>').join('') + '</ul>';
 
     document.getElementById('results').style.display = 'block';
 }
@@ -325,13 +314,11 @@ function initializeMap() {
         
         map = L.map('map').setView(defaultLocation, 12);
         
-        // Add OpenStreetMap tiles
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors',
             maxZoom: 19
         }).addTo(map);
         
-        // Add user location marker
         if (userLocation) {
             userMarker = L.marker(userLocation, {
                 icon: L.divIcon({
@@ -387,13 +374,11 @@ function useCurrentLocation(inputId) {
             position => {
                 const coords = [position.coords.latitude, position.coords.longitude];
                 
-                // Reverse geocode to get address
                 fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords[0]}&lon=${coords[1]}`)
                     .then(response => response.json())
                     .then(data => {
                         document.getElementById(inputId).value = data.display_name;
                         
-                        // Store coordinates based on input type
                         if (inputId === 'origin') {
                             window.originCoords = coords;
                         } else if (inputId === 'destination') {
@@ -404,7 +389,6 @@ function useCurrentLocation(inputId) {
                             window.predDestinationCoords = coords;
                         }
                         
-                        // Update map only for route planning
                         if (map && (inputId === 'origin' || inputId === 'destination')) {
                             map.setView(coords, 15);
                             const marker = L.marker(coords).addTo(map)
@@ -433,7 +417,6 @@ async function findBestRoute() {
             throw new Error('Please enter both origin and destination');
         }
 
-        // Calculate real routes
         await calculateRealRoutes(origin, destination);
         
         startLiveTrafficUpdates();
@@ -445,14 +428,11 @@ async function findBestRoute() {
 
 async function calculateRealRoutes(origin, destination) {
     try {
-        // Clear existing routes
         clearRoutes();
         
-        // Use stored coordinates or geocode
         const originCoords = window.originCoords || await geocodeAddress(origin);
         const destCoords = window.destinationCoords || await geocodeAddress(destination);
         
-        // Create routing control with real routing
         routingControl = L.Routing.control({
             waypoints: [
                 L.latLng(originCoords[0], originCoords[1]),
@@ -481,7 +461,6 @@ async function calculateRealRoutes(origin, destination) {
         
     } catch (error) {
         console.error('Route calculation error:', error);
-        // Generate fallback routes
         currentRoutes = generateFallbackRoutes(origin, destination);
         displayRealTimeRoutes();
     }
@@ -517,7 +496,6 @@ async function geocodeAddress(address) {
         return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
     }
     
-    // Fallback coordinates
     const fallbacks = {
         'bangalore': [12.9716, 77.5946],
         'mysore': [12.2958, 76.6394],
@@ -570,13 +548,11 @@ function displayRealTimeRoutes() {
     const bestRoute = currentRoutes.reduce((best, route) => 
         route.score > best.score ? route : best, currentRoutes[0]);
     
-    // Update statistics
     document.getElementById('total-routes').textContent = currentRoutes.length;
     document.getElementById('best-score').textContent = Math.round(bestRoute.score) + '/100';
     document.getElementById('time-saved').textContent = calculateTimeSaved() + ' min';
     document.getElementById('traffic-level').textContent = bestRoute.traffic_level;
     
-    // Display route options
     displayRouteResults(currentRoutes, bestRoute);
 }
 
@@ -599,7 +575,7 @@ function displayRouteResults(routes, bestRoute) {
         `<div class="route-option ${route.name === bestRoute.name ? 'best' : ''}" onclick="selectRoute(${index})">
             <div class="route-header">
                 <div class="route-title">${route.name}</div>
-                ${route.name === bestRoute.name ? '<div class="route-badge">🏆 OPTIMAL</div>' : ''}
+                ${route.name === bestRoute.name ? '<div class="route-badge"> OPTIMAL</div>' : ''}
             </div>
             <div class="route-details">
                 <div class="route-detail"><div class="route-detail-value">${route.distance}</div><div class="route-detail-label">Distance</div></div>
@@ -616,7 +592,7 @@ function displayRouteResults(routes, bestRoute) {
 
     document.getElementById('route-results').innerHTML = 
         `<div style="text-align: center; margin-bottom: 20px;">
-            <h4 style="color: #28a745;"><span class="live-indicator"></span>🏆 AI Recommended: ${bestRoute.name}</h4>
+            <h4 style="color: #28a745;"><span class="live-indicator"></span> AI Recommended: ${bestRoute.name}</h4>
             <p style="color: #666; font-size: 0.9em;">Based on real-time traffic and ML predictions</p>
         </div>` + routeCards;
 }
@@ -626,7 +602,6 @@ function selectRoute(routeIndex) {
     
     selectedRoute = currentRoutes[routeIndex];
     
-    // Update visual selection
     document.querySelectorAll('.route-option').forEach((el, index) => {
         el.classList.toggle('selected', index === routeIndex);
     });

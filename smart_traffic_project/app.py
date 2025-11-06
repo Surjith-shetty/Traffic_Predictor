@@ -10,20 +10,17 @@ from datetime import datetime, timedelta
 import os
 import sys
 
-# Import our custom modules
 from ml_models import TrafficPredictor
 from weather_api import WeatherAPI
 from data_generator import generate_traffic_dataset
 
-# Page configuration
 st.set_page_config(
     page_title="Smart Traffic Flow Predictor",
-    page_icon="🚦",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS
 st.markdown("""
 <style>
     .main-header {
@@ -76,7 +73,6 @@ def initialize_predictor():
     """Initialize and train the predictor"""
     predictor = TrafficPredictor()
     
-    # Try to load existing models
     if not predictor.load_models():
         st.info("Training ML models... This may take a moment.")
         predictor.load_data('traffic_data.csv')
@@ -86,59 +82,51 @@ def initialize_predictor():
     return predictor
 
 def main():
-    # Header
-    st.markdown('<h1 class="main-header">🚦 Smart Local Traffic Flow Predictor</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="main-header"> Smart Local Traffic Flow Predictor</h1>', unsafe_allow_html=True)
     st.markdown('<p style="text-align: center; font-size: 1.2rem; color: #666;">AI-Powered Route Optimization & Traffic Prediction System</p>', unsafe_allow_html=True)
     
-    # Initialize components
     df = load_and_prepare_data()
     predictor = initialize_predictor()
     weather_api = WeatherAPI()
     
-    # Sidebar
-    st.sidebar.title("🎛️ Control Panel")
+    st.sidebar.title(" Control Panel")
     
-    # Navigation
     page = st.sidebar.selectbox(
         "Choose Function",
-        ["🔮 Live Prediction", "📊 Model Analysis", "📈 Data Insights", "🗺️ Route Comparison"]
+        [" Live Prediction", " Model Analysis", " Data Insights", " Route Comparison"]
     )
     
-    if page == "🔮 Live Prediction":
+    if page == " Live Prediction":
         show_live_prediction(predictor, weather_api)
-    elif page == "📊 Model Analysis":
+    elif page == " Model Analysis":
         show_model_analysis(predictor, df)
-    elif page == "📈 Data Insights":
+    elif page == " Data Insights":
         show_data_insights(df)
-    elif page == "🗺️ Route Comparison":
+    elif page == " Route Comparison":
         show_route_comparison(predictor, weather_api)
 
 def show_live_prediction(predictor, weather_api):
-    st.header("🔮 Real-Time Traffic Prediction")
+    st.header(" Real-Time Traffic Prediction")
     
     col1, col2 = st.columns([1, 1])
     
     with col1:
-        st.subheader("📍 Current Conditions")
+        st.subheader(" Current Conditions")
         
-        # Get current weather
         weather_data = weather_api.get_weather_data()
         
-        # Current time
         now = datetime.now()
         current_hour = now.hour
         current_day = now.weekday()
         is_weekend = 1 if current_day >= 5 else 0
         rush_hour = 1 if (7 <= current_hour <= 9) or (17 <= current_hour <= 19) else 0
         
-        # Display current conditions
-        st.metric("🌡️ Temperature", f"{weather_data['temperature']}°C")
-        st.metric("💧 Humidity", f"{weather_data['humidity']}%")
-        st.metric("🌧️ Rain Intensity", f"{weather_data['rain_intensity']:.1f}")
-        st.metric("⏰ Current Hour", f"{current_hour}:00")
+        st.metric(" Temperature", f"{weather_data['temperature']}°C")
+        st.metric(" Humidity", f"{weather_data['humidity']}%")
+        st.metric(" Rain Intensity", f"{weather_data['rain_intensity']:.1f}")
+        st.metric(" Current Hour", f"{current_hour}:00")
         
-        # Manual overrides
-        st.subheader("🎛️ Adjust Parameters")
+        st.subheader(" Adjust Parameters")
         
         hour_input = st.slider("Hour of Day", 0, 23, current_hour)
         day_input = st.selectbox("Day of Week", 
@@ -153,14 +141,12 @@ def show_live_prediction(predictor, weather_api):
         avg_speed_input = st.slider("Current Average Speed (km/h)", 10, 60, 35)
     
     with col2:
-        st.subheader("🎯 Prediction Results")
+        st.subheader(" Prediction Results")
         
-        # Calculate derived features
         day_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].index(day_input)
         is_weekend_calc = 1 if day_of_week >= 5 else 0
         rush_hour_calc = 1 if (7 <= hour_input <= 9) or (17 <= hour_input <= 19) else 0
         
-        # Make prediction
         predicted_traffic = predictor.predict_traffic(
             hour=hour_input,
             day_of_week=day_of_week,
@@ -173,7 +159,6 @@ def show_live_prediction(predictor, weather_api):
             avg_speed=avg_speed_input
         )
         
-        # Calculate route score
         route_score = predictor.calculate_route_score(
             predicted_traffic=predicted_traffic,
             avg_speed=avg_speed_input,
@@ -181,33 +166,31 @@ def show_live_prediction(predictor, weather_api):
             event_impact=0.3 if event_flag else 0.0
         )
         
-        # Display prediction in a nice box
         st.markdown(f"""
         <div class="prediction-box">
-            <h3>🚗 Traffic Prediction</h3>
+            <h3> Traffic Prediction</h3>
             <div style="font-size: 2.5rem; font-weight: bold;">
                 {predicted_traffic:.0f} vehicles/hour
             </div>
-            <h3>🎯 Route Efficiency Score</h3>
+            <h3> Route Efficiency Score</h3>
             <div class="route-score" style="color: {'#4CAF50' if route_score >= 70 else '#FF9800' if route_score >= 40 else '#F44336'}">
                 {route_score:.1f}/100
             </div>
-            <p>{'🟢 Excellent Route' if route_score >= 70 else '🟡 Moderate Traffic' if route_score >= 40 else '🔴 Heavy Congestion'}</p>
+            <p>{' Excellent Route' if route_score >= 70 else ' Moderate Traffic' if route_score >= 40 else ' Heavy Congestion'}</p>
         </div>
         """, unsafe_allow_html=True)
         
-        # Traffic level indicator
         if predicted_traffic < 200:
-            traffic_level = "🟢 Light Traffic"
+            traffic_level = " Light Traffic"
             color = "#4CAF50"
         elif predicted_traffic < 400:
-            traffic_level = "🟡 Moderate Traffic"
+            traffic_level = " Moderate Traffic"
             color = "#FF9800"
         elif predicted_traffic < 600:
-            traffic_level = "🟠 Heavy Traffic"
+            traffic_level = " Heavy Traffic"
             color = "#FF5722"
         else:
-            traffic_level = "🔴 Very Heavy Traffic"
+            traffic_level = " Very Heavy Traffic"
             color = "#F44336"
         
         st.markdown(f"""
@@ -216,30 +199,28 @@ def show_live_prediction(predictor, weather_api):
         </div>
         """, unsafe_allow_html=True)
         
-        # Recommendations
-        st.subheader("💡 Recommendations")
+        st.subheader(" Recommendations")
         
         recommendations = []
         if route_score < 40:
-            recommendations.append("🚨 Consider alternative routes")
-            recommendations.append("⏰ Delay travel if possible")
+            recommendations.append(" Consider alternative routes")
+            recommendations.append(" Delay travel if possible")
         if rain_input > 0.3:
-            recommendations.append("🌧️ Drive carefully due to rain")
+            recommendations.append(" Drive carefully due to rain")
         if rush_hour_calc:
-            recommendations.append("⏰ Peak hour - expect delays")
+            recommendations.append(" Peak hour - expect delays")
         if event_flag:
-            recommendations.append("🎪 Event traffic - plan extra time")
+            recommendations.append(" Event traffic - plan extra time")
         
         if not recommendations:
-            recommendations.append("✅ Good conditions for travel")
+            recommendations.append(" Good conditions for travel")
         
         for rec in recommendations:
             st.write(rec)
 
 def show_model_analysis(predictor, df):
-    st.header("📊 Machine Learning Model Analysis")
+    st.header(" Machine Learning Model Analysis")
     
-    # Load results if available
     if hasattr(predictor, 'results') and predictor.results:
         results = predictor.results
     else:
@@ -247,8 +228,7 @@ def show_model_analysis(predictor, df):
         predictor.load_data('traffic_data.csv')
         results = predictor.train_all_models()
     
-    # Model comparison table
-    st.subheader("🏆 Model Performance Comparison")
+    st.subheader(" Model Performance Comparison")
     
     comparison_data = []
     for model_name, metrics in results.items():
@@ -263,11 +243,9 @@ def show_model_analysis(predictor, df):
     comparison_df = pd.DataFrame(comparison_data)
     st.dataframe(comparison_df, use_container_width=True)
     
-    # Visualizations
     col1, col2 = st.columns(2)
     
     with col1:
-        # R² Score comparison
         fig_r2 = px.bar(
             comparison_df, 
             x='Model', 
@@ -280,7 +258,6 @@ def show_model_analysis(predictor, df):
         st.plotly_chart(fig_r2, use_container_width=True)
     
     with col2:
-        # MAE comparison
         mae_values = [float(x) for x in comparison_df['MAE']]
         fig_mae = px.bar(
             comparison_df, 
@@ -293,8 +270,7 @@ def show_model_analysis(predictor, df):
         fig_mae.update_layout(showlegend=False)
         st.plotly_chart(fig_mae, use_container_width=True)
     
-    # Feature importance
-    st.subheader("🎯 Feature Importance (Random Forest)")
+    st.subheader(" Feature Importance (Random Forest)")
     
     feature_importance = predictor.get_feature_importance()
     if feature_importance is not None:
@@ -310,20 +286,18 @@ def show_model_analysis(predictor, df):
         fig_importance.update_layout(height=400)
         st.plotly_chart(fig_importance, use_container_width=True)
         
-        # Insights
-        st.subheader("🔍 Key Insights")
+        st.subheader(" Key Insights")
         top_feature = feature_importance.iloc[0]
         st.write(f"• **{top_feature['feature']}** is the most important factor ({top_feature['importance']:.3f})")
         st.write(f"• Random Forest achieved **{results['Random Forest']['R2']*100:.1f}%** accuracy")
         st.write(f"• The model can predict traffic within ±{results['Random Forest']['MAE']:.0f} vehicles/hour")
 
 def show_data_insights(df):
-    st.header("📈 Traffic Data Insights")
+    st.header(" Traffic Data Insights")
     
     col1, col2 = st.columns(2)
     
     with col1:
-        # Traffic by hour
         hourly_traffic = df.groupby('hour')['traffic_flow'].mean().reset_index()
         fig_hourly = px.line(
             hourly_traffic, 
@@ -335,7 +309,6 @@ def show_data_insights(df):
         fig_hourly.update_traces(line_color='#1f77b4', line_width=3)
         st.plotly_chart(fig_hourly, use_container_width=True)
         
-        # Weekend vs Weekday
         weekend_comparison = df.groupby('is_weekend')['traffic_flow'].mean().reset_index()
         weekend_comparison['day_type'] = weekend_comparison['is_weekend'].map({0: 'Weekday', 1: 'Weekend'})
         
@@ -350,7 +323,6 @@ def show_data_insights(df):
         st.plotly_chart(fig_weekend, use_container_width=True)
     
     with col2:
-        # Rain impact
         df['rain_category'] = pd.cut(df['rain_intensity'], 
                                    bins=[0, 0.1, 0.5, 1.0], 
                                    labels=['No Rain', 'Light Rain', 'Heavy Rain'])
@@ -366,7 +338,6 @@ def show_data_insights(df):
         )
         st.plotly_chart(fig_rain, use_container_width=True)
         
-        # Speed vs Traffic correlation
         fig_scatter = px.scatter(
             df.sample(1000), 
             x='avg_speed', 
@@ -378,8 +349,7 @@ def show_data_insights(df):
         )
         st.plotly_chart(fig_scatter, use_container_width=True)
     
-    # Summary statistics
-    st.subheader("📊 Dataset Summary")
+    st.subheader(" Dataset Summary")
     
     col1, col2, col3, col4 = st.columns(4)
     
@@ -393,15 +363,13 @@ def show_data_insights(df):
         st.metric("Avg Speed", f"{df['avg_speed'].mean():.1f} km/h")
 
 def show_route_comparison(predictor, weather_api):
-    st.header("🗺️ Route Comparison & Optimization")
+    st.header(" Route Comparison & Optimization")
     
-    st.subheader("🛣️ Compare Multiple Routes")
+    st.subheader(" Compare Multiple Routes")
     
-    # Get current conditions
     weather_data = weather_api.get_weather_data()
     now = datetime.now()
     
-    # Route comparison
     routes = [
         {"name": "Route A (Main Road)", "base_speed": 45, "traffic_factor": 1.2},
         {"name": "Route B (Highway)", "base_speed": 60, "traffic_factor": 0.8},
@@ -411,7 +379,7 @@ def show_route_comparison(predictor, weather_api):
     col1, col2 = st.columns([1, 2])
     
     with col1:
-        st.subheader("⚙️ Scenario Settings")
+        st.subheader(" Scenario Settings")
         
         scenario_hour = st.slider("Time of Day", 0, 23, now.hour)
         scenario_day = st.selectbox("Day", 
@@ -421,20 +389,17 @@ def show_route_comparison(predictor, weather_api):
         scenario_event = st.checkbox("Special Event", False)
     
     with col2:
-        st.subheader("📊 Route Analysis")
+        st.subheader(" Route Analysis")
         
         route_results = []
         
         for route in routes:
-            # Calculate conditions for this route
             day_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].index(scenario_day)
             is_weekend = 1 if day_of_week >= 5 else 0
             rush_hour = 1 if (7 <= scenario_hour <= 9) or (17 <= scenario_hour <= 19) else 0
             
-            # Adjust speed based on route characteristics
             adjusted_speed = route["base_speed"] * (1 - scenario_rain * 0.3)
             
-            # Predict traffic for this route
             predicted_traffic = predictor.predict_traffic(
                 hour=scenario_hour,
                 day_of_week=day_of_week,
@@ -447,7 +412,6 @@ def show_route_comparison(predictor, weather_api):
                 avg_speed=adjusted_speed
             ) * route["traffic_factor"]
             
-            # Calculate route score
             route_score = predictor.calculate_route_score(
                 predicted_traffic=predicted_traffic,
                 avg_speed=adjusted_speed,
@@ -460,21 +424,17 @@ def show_route_comparison(predictor, weather_api):
                 'Predicted Traffic': f"{predicted_traffic:.0f}",
                 'Expected Speed': f"{adjusted_speed:.1f} km/h",
                 'Route Score': f"{route_score:.1f}",
-                'Recommendation': '🟢 Best' if route_score == max([r['Route Score'] for r in route_results] + [route_score]) else '🟡 OK' if route_score > 50 else '🔴 Avoid'
+                'Recommendation': ' Best' if route_score == max([r['Route Score'] for r in route_results] + [route_score]) else ' OK' if route_score > 50 else ' Avoid'
             })
         
-        # Display results
         results_df = pd.DataFrame(route_results)
         st.dataframe(results_df, use_container_width=True)
         
-        # Best route recommendation
         best_route = max(route_results, key=lambda x: float(x['Route Score']))
-        st.success(f"🏆 **Recommended Route:** {best_route['Route']} (Score: {best_route['Route Score']}/100)")
+        st.success(f" **Recommended Route:** {best_route['Route']} (Score: {best_route['Route Score']}/100)")
     
-    # Time-based analysis
-    st.subheader("⏰ Traffic Prediction Throughout the Day")
+    st.subheader(" Traffic Prediction Throughout the Day")
     
-    # Generate hourly predictions
     hourly_predictions = []
     for hour in range(24):
         day_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].index(scenario_day)
